@@ -1,4 +1,4 @@
-import 'package:nutritional_management/features/sign_in/repository/sign_in_repository.dart';
+import 'package:nutritional_management/features/sign_in/infra/sign_in_gateway.dart';
 import 'package:nutritional_management/features/sign_in/usecase/sign_in_use_case_interface.dart';
 import 'package:nutritional_management/features/sign_in/usecase/sign_in_usecase.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -17,7 +17,7 @@ class SignInPresentation extends _$SignInPresentation {
   void didTappedSignInButton() async {
     state = SignInStatus.loading;
     final usecase =
-        SignInUseCase(SignInRepository()); // コンストラクタ（クラス名()）を呼ぶとインスタンスが作れる
+        SignInUseCase(SignInGateway()); // コンストラクタ（クラス名()）を呼ぶとインスタンスが作れる
     usecase.call().then(
       (result) {
         if (result) {
