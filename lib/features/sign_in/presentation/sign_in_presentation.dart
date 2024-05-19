@@ -1,38 +1,57 @@
-import 'package:nutritional_management/features/sign_in/infra/sign_in_gateway.dart';
-import 'package:nutritional_management/features/sign_in/usecase/sign_in_use_case_interface.dart';
-import 'package:nutritional_management/features/sign_in/usecase/sign_in_usecase.dart';
+import 'package:nutritional_management/common/infra/user_remote_repository.dart';
+import 'package:nutritional_management/common/infra/sign_in_gateway.dart';
+import 'package:nutritional_management/features/sign_in/presentation/view_model/sign_in_view_model.dart';
+import 'package:nutritional_management/common/usecase/sign_in_use_case/sign_in_use_case_interface.dart';
+import 'package:nutritional_management/common/usecase/sign_in_use_case/sign_in_usecase.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 part 'sign_in_presentation.g.dart';
 
-enum SignInStatus { initial, loading, failure, success }
+final signInUseCaseProvider = Provider((ref) {
+  final gateway = ref.read(signInGatewayProvider);
+  final repository = ref.read(userRemoteRepositoryProvider);
+
+  return SignInUseCase(gateway, repository);
+});
+
+final signInGatewayProvider = Provider((ref) => SignInGateway());
+final userRemoteRepositoryProvider = Provider((ref) => UserRemoteRepository());
 
 @riverpod
 class SignInPresentation extends _$SignInPresentation {
+  SignInUseCaseInterface? usecase;
+  SignInPresentation();
+
   //NotifierProviderは何かしら一つの型の状態を持つ
   @override
-  SignInStatus build() {
-    return SignInStatus.initial;
+  SignInViewModel build() {
+    usecase = ref.read(signInUseCaseProvider);
+    return const SignInViewModel(
+        signInStatus: SignInStatus.initial, destination: null, uid: null);
   }
 
   void didTappedSignInButton() async {
-    state = SignInStatus.loading;
-    final usecase =
-        SignInUseCase(SignInGateway()); // コンストラクタ（クラス名()）を呼ぶとインスタンスが作れる
-    usecase.call().then(
-      (result) {
-        if (result) {
-          state = SignInStatus.success;
+    state = state.copyWith(signInStatus: SignInStatus.loading);
+    usecase?.call().then(
+      (model) {
+        Destination? destination;
+        if (model?.user == null) {
+          destination = Destination.register;
         } else {
-          state = SignInStatus.failure;
+          destination = Destination.timeline;
         }
+        state = state.copyWith(
+            signInStatus: SignInStatus.success,
+            destination: destination,
+            uid: model?.uid);
       },
       onError: (err) {
-        state = SignInStatus.failure;
+        state = state.copyWith(signInStatus: SignInStatus.failure);
       },
     );
   }
 
   void didTappedRetryButton() async {
-    state = SignInStatus.initial;
+    state = state.copyWith(signInStatus: SignInStatus.initial);
   }
 }

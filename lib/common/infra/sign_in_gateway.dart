@@ -1,10 +1,12 @@
+import 'dart:ffi';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:nutritional_management/features/sign_in/domain/sign_in_gateway_interface.dart';
+import 'package:nutritional_management/common/domain/infra_interface/sign_in_gateway_interface.dart';
 
 class SignInGateway implements SignInGatewayInterface {
   @override
-  Future<bool> signIn() async {
+  Future<UserCredential> signIn() async {
     // GoogleSignIn をして得られた情報を Firebase と関連づけることをやっています。
     try {
       final googleUser =
@@ -16,11 +18,11 @@ class SignInGateway implements SignInGatewayInterface {
         accessToken: googleAuth?.accessToken,
         idToken: googleAuth?.idToken,
       );
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = await FirebaseAuth.instance.signInWithCredential(credential);
 
-      return true;
+      return Future.value(user);
     } catch (e) {
-      return false;
+      return Future.error(e);
     }
   }
 }
